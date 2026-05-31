@@ -8,6 +8,7 @@ import { currentHeapThree } from "./heapSort";
 import { currentSorted } from "./sorted";
 import { currentMergeX } from "./mergeSort";
 import { isRunning } from "./running";
+import { isPaused } from "./paused";
 
 export default combineReducers({
   array,
@@ -20,4 +21,5 @@ export default combineReducers({
   currentSorted,
   currentMergeX,
   isRunning,
+  isPaused,
 });

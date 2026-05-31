@@ -3,12 +3,15 @@ import { setCurrentBubbleTwo } from "../reducers/bubbleSort";
 import { setCurrentSwappers } from "../reducers/swappers";
 import { setCurrentSorted } from "../reducers/sorted";
 import { setRunning } from "../reducers/running";
+import pauseController from "../pauseController";
+import runController from "../runController";
 
 function bubbleSort(stateArray, dispatch, speed) {
   let array = stateArray.slice(0),
       toDispatch = [],
       sorted = false,
       round = 0;
+  const runId = runController.getCurrentRunId();
   while (!sorted) {
     sorted = true;
     for (let i = 0; i < array.length - 1 - round; i++) {
@@ -26,18 +29,19 @@ function bubbleSort(stateArray, dispatch, speed) {
     toDispatch.push([true, array.length - 1 - round]);
     round++;
   }
-  handleDispatch(toDispatch, dispatch, array, speed);
+  handleDispatch(toDispatch, dispatch, array, speed, runId);
   return array;
 }
 
-function handleDispatch(toDispatch, dispatch, array, speed) {
+function handleDispatch(toDispatch, dispatch, array, speed, runId) {
   if (!toDispatch.length) {
     dispatch(setCurrentBubbleTwo(array.map((num, index) => index)));
-    setTimeout(() => {
+    scheduleNext(() => {
+      if (!runController.isRunActive(runId)) return;
       dispatch(setCurrentBubbleTwo([]));
       dispatch(setCurrentSorted(array.map((num, index) => index)));
       dispatch(setRunning(false));
-    }, 900);
+    }, 900, runId);
     return;
   }
   let dispatchFunction = toDispatch[0].length > 3 ?
@@ -45,9 +49,22 @@ function handleDispatch(toDispatch, dispatch, array, speed) {
       setCurrentSwappers : toDispatch[0].length === 2 && typeof toDispatch[0][0] === "boolean" ?
         setCurrentSorted : setCurrentBubbleTwo;
   dispatch(dispatchFunction(toDispatch.shift()));
-  setTimeout(() => {
-    handleDispatch(toDispatch, dispatch, array, speed);
-  }, speed);
+  scheduleNext(() => {
+    if (!runController.isRunActive(runId)) return;
+    handleDispatch(toDispatch, dispatch, array, speed, runId);
+  }, speed, runId);
 }
 
 export default bubbleSort;
+
+function scheduleNext(cb, delay, runId) {
+  const tick = () => {
+    if (!runController.isRunActive(runId)) return;
+    if (!pauseController.isPaused()) {
+      setTimeout(cb, delay);
+    } else {
+      setTimeout(tick, 100);
+    }
+  };
+  tick();
+}

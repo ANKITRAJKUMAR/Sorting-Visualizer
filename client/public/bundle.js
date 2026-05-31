@@ -63,7 +63,7 @@
 	
 	var _MainContainer2 = _interopRequireDefault(_MainContainer);
 	
-	var _store = __webpack_require__(/*! ./store */ 398);
+	var _store = __webpack_require__(/*! ./store */ 401);
 	
 	var _store2 = _interopRequireDefault(_store);
 	
@@ -24435,11 +24435,11 @@
 	
 	var _ToolbarContainer2 = _interopRequireDefault(_ToolbarContainer);
 	
-	var _BodyContainer = __webpack_require__(/*! ./Body/BodyContainer.js */ 392);
+	var _BodyContainer = __webpack_require__(/*! ./Body/BodyContainer.js */ 395);
 	
 	var _BodyContainer2 = _interopRequireDefault(_BodyContainer);
 	
-	__webpack_require__(/*! ./Main.css */ 396);
+	__webpack_require__(/*! ./Main.css */ 399);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -24502,19 +24502,29 @@
 	
 	var _running = __webpack_require__(/*! ../../../reducers/running */ 382);
 	
-	var _bubbleSort = __webpack_require__(/*! ../../../algorithms/bubbleSort.js */ 383);
+	var _paused = __webpack_require__(/*! ../../../reducers/paused */ 383);
+	
+	var _pauseController = __webpack_require__(/*! ../../../pauseController */ 384);
+	
+	var _pauseController2 = _interopRequireDefault(_pauseController);
+	
+	var _runController = __webpack_require__(/*! ../../../runController */ 385);
+	
+	var _runController2 = _interopRequireDefault(_runController);
+	
+	var _bubbleSort = __webpack_require__(/*! ../../../algorithms/bubbleSort.js */ 386);
 	
 	var _bubbleSort2 = _interopRequireDefault(_bubbleSort);
 	
-	var _quickSort = __webpack_require__(/*! ../../../algorithms/quickSort.js */ 386);
+	var _quickSort = __webpack_require__(/*! ../../../algorithms/quickSort.js */ 389);
 	
 	var _quickSort2 = _interopRequireDefault(_quickSort);
 	
-	var _heapSort = __webpack_require__(/*! ../../../algorithms/heapSort.js */ 388);
+	var _heapSort = __webpack_require__(/*! ../../../algorithms/heapSort.js */ 391);
 	
 	var _heapSort2 = _interopRequireDefault(_heapSort);
 	
-	var _mergeSort = __webpack_require__(/*! ../../../algorithms/mergeSort.js */ 390);
+	var _mergeSort = __webpack_require__(/*! ../../../algorithms/mergeSort.js */ 393);
 	
 	var _mergeSort2 = _interopRequireDefault(_mergeSort);
 	
@@ -24523,11 +24533,13 @@
 	var mapStateToProps = function mapStateToProps(_ref) {
 	  var array = _ref.array,
 	      algorithm = _ref.algorithm,
-	      isRunning = _ref.isRunning;
+	      isRunning = _ref.isRunning,
+	      isPaused = _ref.isPaused;
 	  return {
 	    array: array,
 	    algorithm: algorithm,
-	    isRunning: isRunning
+	    isRunning: isRunning,
+	    isPaused: isPaused
 	  };
 	};
 	
@@ -24541,15 +24553,30 @@
 	        }
 	        dispatch((0, _array.setArray)(array));
 	        dispatch((0, _sorted.setCurrentSorted)([]));
+	        dispatch((0, _paused.setPaused)(false));
+	        _pauseController2.default.setPaused(false);
 	      },
 	
 	      updateAlgorithm: function updateAlgorithm(algorithm) {
 	        dispatch((0, _algorithm.setAlgorithm)(algorithm));
+	        dispatch((0, _paused.setPaused)(false));
+	        _pauseController2.default.setPaused(false);
+	      },
+	
+	      togglePause: function togglePause() {
+	        var currentPaused = _pauseController2.default.isPaused();
+	        var newPaused = !currentPaused;
+	        dispatch((0, _paused.setPaused)(newPaused));
+	        _pauseController2.default.setPaused(newPaused);
 	      },
 	
 	      sort: function sort(algorithm, array, speed) {
 	        var doSort = algorithm === "bubbleSort" ? _bubbleSort2.default : algorithm === "quickSort" ? _quickSort2.default : algorithm === "heapSort" ? _heapSort2.default : algorithm === "mergeSort" ? _mergeSort2.default : null;
 	        dispatch((0, _sorted.setCurrentSorted)([]));
+	        // start a new run id so any previous run stops
+	        _runController2.default.startRun();
+	        dispatch((0, _paused.setPaused)(false));
+	        _pauseController2.default.setPaused(false);
 	        dispatch((0, _running.setRunning)(true));
 	        doSort(array, dispatch, speed);
 	      }
@@ -24636,7 +24663,9 @@
 	          algorithm = _props.algorithm,
 	          generateArray = _props.generateArray,
 	          sort = _props.sort,
-	          isRunning = _props.isRunning;
+	          isRunning = _props.isRunning,
+	          isPaused = _props.isPaused,
+	          togglePause = _props.togglePause;
 	
 	
 	      var speed = 570 - Math.pow(array.length, 2) > 0 ? 570 - Math.pow(array.length, 2) : 0;
@@ -24714,15 +24743,33 @@
 	        ),
 	        _react2.default.createElement("div", { className: "separator" }),
 	        algorithm ? _react2.default.createElement(
-	          "div",
+	          "button",
 	          {
 	            id: "sort",
-	            style: { color: color, cursor: cursor },
-	            onClick: !isRunning ? function () {
+	            className: "toolbarButton",
+	            disabled: isRunning && !isPaused,
+	            onClick: !isRunning || isPaused ? function () {
 	              return sort(algorithm, array, speed);
 	            } : null },
 	          "Sort!"
-	        ) : null
+	        ) : null,
+	        _react2.default.createElement("div", { className: "separator" }),
+	        _react2.default.createElement(
+	          "button",
+	          {
+	            id: "pause",
+	            className: "toolbarButton",
+	            disabled: !isRunning,
+	            onClick: isRunning ? function () {
+	              return togglePause();
+	            } : null },
+	          isPaused ? "Resume" : "Pause"
+	        ),
+	        _react2.default.createElement(
+	          "div",
+	          { className: "toolbarStatus" },
+	          isRunning ? isPaused ? "Paused" : "Running" : "Idle"
+	        )
 	      );
 	    }
 	  }]);
@@ -24773,7 +24820,7 @@
 	
 	
 	// module
-	exports.push([module.id, "#toolbar {\n  width: 100%;\n  height: 100px;\n  background-color: #34495e;\n}\n\n#generateArray {\n  font-size: 16px;\n  font-family: monospace;\n  display: inline-block;\n  margin-left: 25px;\n  margin-right: 15px;\n}\n\n#generateArray:hover {\n  color: rgb(212, 212, 212) !important;\n}\n\n#generateArrayX {\n  font-size: 16px;\n  font-family: monospace;\n  display: inline-block;\n  margin-left: 25px;\n  margin-right: 15px;\n}\n\n#arraySize {\n  font-size: 16px;\n  font-family: monospace;\n  display: inline-block;\n  margin-left: 15px;\n  margin-right: 15px;\n}\n\n#changeSize {\n  outline: none;\n  margin-right: 15px;\n}\n\n.separator {\n  width: 5px;\n  height: 55px;\n  background-color: rgba(0, 0, 0, 0.8);\n  margin-left: 15px;\n  margin-right: 15px;\n  display: inline-block;\n}\n\n.algorithmButton {\n  color: white;\n  font-size: 16px;\n  font-family: monospace;\n  display: inline-block;\n  margin-left: 15px;\n  margin-right: 15px;\n  cursor: pointer;\n}\n\n.algorithmButton:hover {\n  color: rgb(212, 212, 212);\n}\n\n.currentAlgorithmButton {\n  color: rgb(241, 94, 255);\n  font-size: 16px;\n  font-family: monospace;\n  display: inline-block;\n  margin-left: 15px;\n  margin-right: 15px;\n  cursor: pointer;\n}\n\n#sort {\n  font-size: 16px;\n  font-family: monospace;\n  display: inline-block;\n  margin-left: 15px;\n}\n\n#sort:hover {\n  color: rgb(212, 212, 212);\n}\n\ninput[type=range] {\n    -webkit-appearance: none;\n    border: 1px solid white;\n    width: 100px;\n}\n\ninput[type=range]::-webkit-slider-runnable-track {\n    width: 100px;\n    height: 5px;\n    border: none;\n    border-radius: 3px;\n}\n\ninput[type=range]::-webkit-slider-thumb {\n    -webkit-appearance: none;\n    border: none;\n    height: 16px;\n    width: 16px;\n    border-radius: 50%;\n    background: rgb(241, 94, 255);\n    margin-top: -4px;\n}\n\ninput[type=range]:focus {\n    outline: none;\n}\n\ninput[type=range]:focus::-webkit-slider-runnable-track {\n    background: #ccc;\n}\n\ninput[type=range]::-moz-range-track {\n    width: 100px;\n    height: 5px;\n    border: none;\n    border-radius: 3px;\n}\n\ninput[type=range]::-moz-range-thumb {\n    border: none;\n    height: 16px;\n    width: 16px;\n    border-radius: 50%;\n    background: rgb(241, 94, 255);\n}\n\ninput[type=range]:-moz-focusring{\n    outline: 1px solid white;\n    outline-offset: -1px;\n}\n\ninput[type=range]::-ms-track {\n    width: 100px;\n    height: 5px;\n    background: transparent;\n    border-color: transparent;\n    border-width: 6px 0;\n    color: transparent;\n}\n\ninput[type=range]::-ms-fill-lower {\n    background: #777;\n    border-radius: 10px;\n}\n\ninput[type=range]::-ms-fill-upper {\n    border-radius: 10px;\n}\n\ninput[type=range]::-ms-thumb {\n    border: none;\n    height: 16px;\n    width: 16px;\n    border-radius: 50%;\n    background: rgb(241, 94, 255);\n}\n\ninput[type=range]:focus::-ms-fill-lower {\n    background: #888;\n}\n\ninput[type=range]:focus::-ms-fill-upper {\n    background: #ccc;\n}\n", ""]);
+	exports.push([module.id, "#toolbar {\r\n  width: 100%;\r\n  height: 100px;\r\n  background-color: #34495e;\r\n}\r\n\r\n#generateArray {\r\n  font-size: 16px;\r\n  font-family: monospace;\r\n  display: inline-block;\r\n  margin-left: 25px;\r\n  margin-right: 15px;\r\n}\r\n\r\n#generateArray:hover {\r\n  color: rgb(212, 212, 212) !important;\r\n}\r\n\r\n#generateArrayX {\r\n  font-size: 16px;\r\n  font-family: monospace;\r\n  display: inline-block;\r\n  margin-left: 25px;\r\n  margin-right: 15px;\r\n}\r\n\r\n#arraySize {\r\n  font-size: 16px;\r\n  font-family: monospace;\r\n  display: inline-block;\r\n  margin-left: 15px;\r\n  margin-right: 15px;\r\n}\r\n\r\n#changeSize {\r\n  outline: none;\r\n  margin-right: 15px;\r\n}\r\n\r\n.separator {\r\n  width: 5px;\r\n  height: 55px;\r\n  background-color: rgba(0, 0, 0, 0.8);\r\n  margin-left: 15px;\r\n  margin-right: 15px;\r\n  display: inline-block;\r\n}\r\n\r\n.algorithmButton {\r\n  color: white;\r\n  font-size: 16px;\r\n  font-family: monospace;\r\n  display: inline-block;\r\n  margin-left: 15px;\r\n  margin-right: 15px;\r\n  cursor: pointer;\r\n}\r\n\r\n.algorithmButton:hover {\r\n  color: rgb(212, 212, 212);\r\n}\r\n\r\n.currentAlgorithmButton {\r\n  color: rgb(241, 94, 255);\r\n  font-size: 16px;\r\n  font-family: monospace;\r\n  display: inline-block;\r\n  margin-left: 15px;\r\n  margin-right: 15px;\r\n  cursor: pointer;\r\n}\r\n\r\n#sort,\r\n#pause,\r\n.toolbarButton {\r\n  font-size: 16px;\r\n  font-family: monospace;\r\n  display: inline-block;\r\n  margin-left: 15px;\r\n  margin-right: 15px;\r\n  color: white;\r\n  background: transparent;\r\n  border: 1px solid white;\r\n  padding: 6px 12px;\r\n  cursor: pointer;\r\n}\r\n\r\n#sort:hover,\r\n#pause:hover,\r\n.toolbarButton:hover {\r\n  color: rgb(212, 212, 212);\r\n}\r\n\r\n#sort[disabled],\r\n#pause[disabled],\r\n.toolbarButton[disabled] {\r\n  opacity: 0.5;\r\n  cursor: not-allowed;\r\n}\r\n\r\n.toolbarStatus {\r\n  display: inline-block;\r\n  color: white;\r\n  font-family: monospace;\r\n  margin-left: 15px;\r\n}\r\n\r\ninput[type=range] {\r\n    -webkit-appearance: none;\r\n    border: 1px solid white;\r\n    width: 100px;\r\n}\r\n\r\ninput[type=range]::-webkit-slider-runnable-track {\r\n    width: 100px;\r\n    height: 5px;\r\n    border: none;\r\n    border-radius: 3px;\r\n}\r\n\r\ninput[type=range]::-webkit-slider-thumb {\r\n    -webkit-appearance: none;\r\n    border: none;\r\n    height: 16px;\r\n    width: 16px;\r\n    border-radius: 50%;\r\n    background: rgb(241, 94, 255);\r\n    margin-top: -4px;\r\n}\r\n\r\ninput[type=range]:focus {\r\n    outline: none;\r\n}\r\n\r\ninput[type=range]:focus::-webkit-slider-runnable-track {\r\n    background: #ccc;\r\n}\r\n\r\ninput[type=range]::-moz-range-track {\r\n    width: 100px;\r\n    height: 5px;\r\n    border: none;\r\n    border-radius: 3px;\r\n}\r\n\r\ninput[type=range]::-moz-range-thumb {\r\n    border: none;\r\n    height: 16px;\r\n    width: 16px;\r\n    border-radius: 50%;\r\n    background: rgb(241, 94, 255);\r\n}\r\n\r\ninput[type=range]:-moz-focusring{\r\n    outline: 1px solid white;\r\n    outline-offset: -1px;\r\n}\r\n\r\n#pause {\r\n  font-size: 16px;\r\n  font-family: monospace;\r\n  display: inline-block;\r\n  margin-left: 15px;\r\n}\r\n\r\n#pause:hover {\r\n  color: rgb(212, 212, 212);\r\n}\r\n\r\ninput[type=range]::-ms-track {\r\n    width: 100px;\r\n    height: 5px;\r\n    background: transparent;\r\n    border-color: transparent;\r\n    border-width: 6px 0;\r\n    color: transparent;\r\n}\r\n\r\ninput[type=range]::-ms-fill-lower {\r\n    background: #777;\r\n    border-radius: 10px;\r\n}\r\n\r\ninput[type=range]::-ms-fill-upper {\r\n    border-radius: 10px;\r\n}\r\n\r\ninput[type=range]::-ms-thumb {\r\n    border: none;\r\n    height: 16px;\r\n    width: 16px;\r\n    border-radius: 50%;\r\n    background: rgb(241, 94, 255);\r\n}\r\n\r\ninput[type=range]:focus::-ms-fill-lower {\r\n    background: #888;\r\n}\r\n\r\ninput[type=range]:focus::-ms-fill-upper {\r\n    background: #ccc;\r\n}\r\n", ""]);
 	
 	// exports
 
@@ -31085,6 +31132,85 @@
 /***/ },
 /* 383 */
 /*!*********************************************!*\
+  !*** ./client/app/reducers/paused/index.js ***!
+  \*********************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.isPaused = exports.setPaused = exports.SET_PAUSED = undefined;
+	
+	var _reduxActions = __webpack_require__(/*! redux-actions */ 225);
+	
+	var initialState = false;
+	
+	var SET_PAUSED = exports.SET_PAUSED = "SET_PAUSED";
+	var setPaused = exports.setPaused = (0, _reduxActions.createAction)(SET_PAUSED);
+	
+	var isPaused = exports.isPaused = (0, _reduxActions.handleActions)({
+	  SET_PAUSED: function SET_PAUSED(state, _ref) {
+	    var payload = _ref.payload;
+	
+	    return payload;
+	  }
+	}, initialState);
+
+/***/ },
+/* 384 */
+/*!***************************************!*\
+  !*** ./client/app/pauseController.js ***!
+  \***************************************/
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	var _paused = false;
+	
+	exports.default = {
+	  setPaused: function setPaused(val) {
+	    _paused = !!val;
+	  },
+	  isPaused: function isPaused() {
+	    return _paused;
+	  }
+	};
+
+/***/ },
+/* 385 */
+/*!*************************************!*\
+  !*** ./client/app/runController.js ***!
+  \*************************************/
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	var currentRunId = 0;
+	
+	exports.default = {
+	  startRun: function startRun() {
+	    currentRunId += 1;
+	    return currentRunId;
+	  },
+	  getCurrentRunId: function getCurrentRunId() {
+	    return currentRunId;
+	  },
+	  isRunActive: function isRunActive(id) {
+	    return id === currentRunId;
+	  }
+	};
+
+/***/ },
+/* 386 */
+/*!*********************************************!*\
   !*** ./client/app/algorithms/bubbleSort.js ***!
   \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
@@ -31097,19 +31223,30 @@
 	
 	var _array = __webpack_require__(/*! ../reducers/array */ 224);
 	
-	var _bubbleSort = __webpack_require__(/*! ../reducers/bubbleSort */ 384);
+	var _bubbleSort = __webpack_require__(/*! ../reducers/bubbleSort */ 387);
 	
-	var _swappers = __webpack_require__(/*! ../reducers/swappers */ 385);
+	var _swappers = __webpack_require__(/*! ../reducers/swappers */ 388);
 	
 	var _sorted = __webpack_require__(/*! ../reducers/sorted */ 381);
 	
 	var _running = __webpack_require__(/*! ../reducers/running */ 382);
+	
+	var _pauseController = __webpack_require__(/*! ../pauseController */ 384);
+	
+	var _pauseController2 = _interopRequireDefault(_pauseController);
+	
+	var _runController = __webpack_require__(/*! ../runController */ 385);
+	
+	var _runController2 = _interopRequireDefault(_runController);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function bubbleSort(stateArray, dispatch, speed) {
 	  var array = stateArray.slice(0),
 	      toDispatch = [],
 	      sorted = false,
 	      round = 0;
+	  var runId = _runController2.default.getCurrentRunId();
 	  while (!sorted) {
 	    sorted = true;
 	    for (var i = 0; i < array.length - 1 - round; i++) {
@@ -31127,35 +31264,50 @@
 	    toDispatch.push([true, array.length - 1 - round]);
 	    round++;
 	  }
-	  handleDispatch(toDispatch, dispatch, array, speed);
+	  handleDispatch(toDispatch, dispatch, array, speed, runId);
 	  return array;
 	}
 	
-	function handleDispatch(toDispatch, dispatch, array, speed) {
+	function handleDispatch(toDispatch, dispatch, array, speed, runId) {
 	  if (!toDispatch.length) {
 	    dispatch((0, _bubbleSort.setCurrentBubbleTwo)(array.map(function (num, index) {
 	      return index;
 	    })));
-	    setTimeout(function () {
+	    scheduleNext(function () {
+	      if (!_runController2.default.isRunActive(runId)) return;
 	      dispatch((0, _bubbleSort.setCurrentBubbleTwo)([]));
 	      dispatch((0, _sorted.setCurrentSorted)(array.map(function (num, index) {
 	        return index;
 	      })));
 	      dispatch((0, _running.setRunning)(false));
-	    }, 900);
+	    }, 900, runId);
 	    return;
 	  }
 	  var dispatchFunction = toDispatch[0].length > 3 ? _array.setArray : toDispatch[0].length === 3 || toDispatch[0].length === 0 ? _swappers.setCurrentSwappers : toDispatch[0].length === 2 && typeof toDispatch[0][0] === "boolean" ? _sorted.setCurrentSorted : _bubbleSort.setCurrentBubbleTwo;
 	  dispatch(dispatchFunction(toDispatch.shift()));
-	  setTimeout(function () {
-	    handleDispatch(toDispatch, dispatch, array, speed);
-	  }, speed);
+	  scheduleNext(function () {
+	    if (!_runController2.default.isRunActive(runId)) return;
+	    handleDispatch(toDispatch, dispatch, array, speed, runId);
+	  }, speed, runId);
 	}
 	
 	exports.default = bubbleSort;
+	
+	
+	function scheduleNext(cb, delay, runId) {
+	  var tick = function tick() {
+	    if (!_runController2.default.isRunActive(runId)) return;
+	    if (!_pauseController2.default.isPaused()) {
+	      setTimeout(cb, delay);
+	    } else {
+	      setTimeout(tick, 100);
+	    }
+	  };
+	  tick();
+	}
 
 /***/ },
-/* 384 */
+/* 387 */
 /*!*************************************************!*\
   !*** ./client/app/reducers/bubbleSort/index.js ***!
   \*************************************************/
@@ -31184,7 +31336,7 @@
 	}, initialState);
 
 /***/ },
-/* 385 */
+/* 388 */
 /*!***********************************************!*\
   !*** ./client/app/reducers/swappers/index.js ***!
   \***********************************************/
@@ -31217,7 +31369,7 @@
 	}, initialState);
 
 /***/ },
-/* 386 */
+/* 389 */
 /*!********************************************!*\
   !*** ./client/app/algorithms/quickSort.js ***!
   \********************************************/
@@ -31231,19 +31383,30 @@
 	
 	var _array = __webpack_require__(/*! ../reducers/array */ 224);
 	
-	var _quickSort = __webpack_require__(/*! ../reducers/quickSort */ 387);
+	var _quickSort = __webpack_require__(/*! ../reducers/quickSort */ 390);
 	
-	var _swappers = __webpack_require__(/*! ../reducers/swappers */ 385);
+	var _swappers = __webpack_require__(/*! ../reducers/swappers */ 388);
 	
 	var _sorted = __webpack_require__(/*! ../reducers/sorted */ 381);
 	
 	var _running = __webpack_require__(/*! ../reducers/running */ 382);
 	
+	var _pauseController = __webpack_require__(/*! ../pauseController */ 384);
+	
+	var _pauseController2 = _interopRequireDefault(_pauseController);
+	
+	var _runController = __webpack_require__(/*! ../runController */ 385);
+	
+	var _runController2 = _interopRequireDefault(_runController);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
 	function quickSort(stateArray, dispatch, speed) {
 	  var array = stateArray.slice(0),
 	      toDispatch = [];
+	  var runId = _runController2.default.getCurrentRunId();
 	  quickSortHelper(array, 0, array.length - 1, toDispatch);
-	  handleDispatch(toDispatch, dispatch, array, speed);
+	  handleDispatch(toDispatch, dispatch, array, speed, runId);
 	  return array;
 	}
 	
@@ -31288,30 +31451,45 @@
 	  quickSortHelper(array, right + 1, end, toDispatch);
 	}
 	
-	function handleDispatch(toDispatch, dispatch, array, speed) {
+	function handleDispatch(toDispatch, dispatch, array, speed, runId) {
 	  if (!toDispatch.length) {
 	    dispatch((0, _quickSort.setPivot)(null));
 	    dispatch((0, _quickSort.setCurrentQuickTwo)(array.map(function (num, index) {
 	      return index;
 	    })));
-	    setTimeout(function () {
+	    scheduleNext(function () {
+	      if (!_runController2.default.isRunActive(runId)) return;
 	      dispatch((0, _quickSort.setCurrentQuickTwo)([]));
 	      dispatch((0, _running.setRunning)(false));
-	    }, 900);
+	    }, 900, runId);
 	    return;
 	  }
 	  var dispatchFunction = !(toDispatch[0] instanceof Array) ? _quickSort.setPivot : toDispatch[0].length > 3 ? _array.setArray : toDispatch[0].length !== 2 ? _swappers.setCurrentSwappers : toDispatch[0].length === 2 && typeof toDispatch[0][0] === "boolean" ? _sorted.setCurrentSorted : _quickSort.setCurrentQuickTwo;
 	  dispatch(dispatchFunction(toDispatch.shift()));
 	  if (dispatchFunction === _quickSort.setPivot) dispatch((0, _quickSort.setCurrentQuickTwo)(toDispatch.shift()));
-	  setTimeout(function () {
-	    handleDispatch(toDispatch, dispatch, array, speed);
-	  }, speed);
+	  scheduleNext(function () {
+	    if (!_runController2.default.isRunActive(runId)) return;
+	    handleDispatch(toDispatch, dispatch, array, speed, runId);
+	  }, speed, runId);
 	}
 	
 	exports.default = quickSort;
+	
+	
+	function scheduleNext(cb, delay, runId) {
+	  var tick = function tick() {
+	    if (!_runController2.default.isRunActive(runId)) return;
+	    if (!_pauseController2.default.isPaused()) {
+	      setTimeout(cb, delay);
+	    } else {
+	      setTimeout(tick, 100);
+	    }
+	  };
+	  tick();
+	}
 
 /***/ },
-/* 387 */
+/* 390 */
 /*!************************************************!*\
   !*** ./client/app/reducers/quickSort/index.js ***!
   \************************************************/
@@ -31350,7 +31528,7 @@
 	}, initialStateTwo);
 
 /***/ },
-/* 388 */
+/* 391 */
 /*!*******************************************!*\
   !*** ./client/app/algorithms/heapSort.js ***!
   \*******************************************/
@@ -31364,17 +31542,28 @@
 	
 	var _array = __webpack_require__(/*! ../reducers/array */ 224);
 	
-	var _heapSort = __webpack_require__(/*! ../reducers/heapSort */ 389);
+	var _heapSort = __webpack_require__(/*! ../reducers/heapSort */ 392);
 	
-	var _swappers = __webpack_require__(/*! ../reducers/swappers */ 385);
+	var _swappers = __webpack_require__(/*! ../reducers/swappers */ 388);
 	
 	var _sorted = __webpack_require__(/*! ../reducers/sorted */ 381);
 	
 	var _running = __webpack_require__(/*! ../reducers/running */ 382);
 	
+	var _pauseController = __webpack_require__(/*! ../pauseController */ 384);
+	
+	var _pauseController2 = _interopRequireDefault(_pauseController);
+	
+	var _runController = __webpack_require__(/*! ../runController */ 385);
+	
+	var _runController2 = _interopRequireDefault(_runController);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
 	function heapSort(stateArray, dispatch, speed) {
 	  var array = stateArray.slice(0),
 	      toDispatch = [];
+	  var runId = _runController2.default.getCurrentRunId();
 	  buildMaxHeap(array, toDispatch);
 	  var end = array.length - 1;
 	  while (end > 0) {
@@ -31390,7 +31579,7 @@
 	    end--;
 	  }
 	  toDispatch.push([true, end]);
-	  handleDispatch(toDispatch, dispatch, array, speed);
+	  handleDispatch(toDispatch, dispatch, array, speed, runId);
 	  return array;
 	}
 	
@@ -31427,28 +31616,42 @@
 	  }
 	}
 	
-	function handleDispatch(toDispatch, dispatch, array, speed) {
+	function handleDispatch(toDispatch, dispatch, array, speed, runId) {
 	  if (!toDispatch.length) {
 	    dispatch((0, _heapSort.setCurrentHeapThree)(array.map(function (num, index) {
 	      return index;
 	    })));
-	    setTimeout(function () {
+	    scheduleNext(function () {
+	      if (!_runController2.default.isRunActive(runId)) return;
 	      dispatch((0, _heapSort.setCurrentHeapThree)([]));
 	      dispatch((0, _running.setRunning)(false));
-	    }, 900);
+	    }, 900, runId);
 	    return;
 	  }
 	  var dispatchFunction = toDispatch[0].length > 3 ? _array.setArray : toDispatch[0].length === 3 && typeof toDispatch[0][2] === "boolean" || !toDispatch[0].length ? _swappers.setCurrentSwappers : toDispatch[0].length === 2 && typeof toDispatch[0][0] === "boolean" ? _sorted.setCurrentSorted : _heapSort.setCurrentHeapThree;
 	  dispatch(dispatchFunction(toDispatch.shift()));
-	  setTimeout(function () {
-	    handleDispatch(toDispatch, dispatch, array, speed);
-	  }, speed);
+	  scheduleNext(function () {
+	    if (!_runController2.default.isRunActive(runId)) return;
+	    handleDispatch(toDispatch, dispatch, array, speed, runId);
+	  }, speed, runId);
+	}
+	
+	function scheduleNext(cb, delay, runId) {
+	  var tick = function tick() {
+	    if (!_runController2.default.isRunActive(runId)) return;
+	    if (!_pauseController2.default.isPaused()) {
+	      setTimeout(cb, delay);
+	    } else {
+	      setTimeout(tick, 100);
+	    }
+	  };
+	  tick();
 	}
 	
 	exports.default = heapSort;
 
 /***/ },
-/* 389 */
+/* 392 */
 /*!***********************************************!*\
   !*** ./client/app/reducers/heapSort/index.js ***!
   \***********************************************/
@@ -31477,7 +31680,7 @@
 	}, initialState);
 
 /***/ },
-/* 390 */
+/* 393 */
 /*!********************************************!*\
   !*** ./client/app/algorithms/mergeSort.js ***!
   \********************************************/
@@ -31491,21 +31694,32 @@
 	
 	var _array = __webpack_require__(/*! ../reducers/array */ 224);
 	
-	var _mergeSort = __webpack_require__(/*! ../reducers/mergeSort */ 391);
+	var _mergeSort = __webpack_require__(/*! ../reducers/mergeSort */ 394);
 	
-	var _swappers = __webpack_require__(/*! ../reducers/swappers */ 385);
+	var _swappers = __webpack_require__(/*! ../reducers/swappers */ 388);
 	
 	var _sorted = __webpack_require__(/*! ../reducers/sorted */ 381);
 	
 	var _running = __webpack_require__(/*! ../reducers/running */ 382);
 	
+	var _pauseController = __webpack_require__(/*! ../pauseController */ 384);
+	
+	var _pauseController2 = _interopRequireDefault(_pauseController);
+	
+	var _runController = __webpack_require__(/*! ../runController */ 385);
+	
+	var _runController2 = _interopRequireDefault(_runController);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
 	function mergeSort(stateArray, dispatch, speed) {
 	  var array = stateArray.slice(0),
 	      toDispatch = [];
+	  var runId = _runController2.default.getCurrentRunId();
 	  var finalArray = mergeSortHelper(array.map(function (num, idx) {
 	    return [num, idx];
 	  }), toDispatch, 0, array.length - 1, { array: array.slice(0) });
-	  handleDispatch(toDispatch, dispatch, finalArray, speed);
+	  handleDispatch(toDispatch, dispatch, finalArray, speed, runId);
 	}
 	
 	function mergeSortHelper(array, toDispatch, start, end, obj) {
@@ -31563,18 +31777,19 @@
 	  return sortedArray.concat(first).concat(second);
 	}
 	
-	function handleDispatch(toDispatch, dispatch, array, speed) {
+	function handleDispatch(toDispatch, dispatch, array, speed, runId) {
 	  if (!toDispatch.length) {
 	    dispatch((0, _mergeSort.setCurrentMergeX)(array.map(function (num, index) {
 	      return index;
 	    })));
-	    setTimeout(function () {
+	    scheduleNext(function () {
+	      if (!_runController2.default.isRunActive(runId)) return;
 	      dispatch((0, _mergeSort.setCurrentMergeX)([]));
 	      dispatch((0, _sorted.setCurrentSorted)(array.map(function (num, index) {
 	        return index;
 	      })));
 	      dispatch((0, _running.setRunning)(false));
-	    }, 900);
+	    }, 900, runId);
 	    return;
 	  }
 	  var dispatchFunction = toDispatch[0].length > 3 ? _array.setArray : toDispatch[0].length === 3 && typeof toDispatch[0][2] === "boolean" || toDispatch[0].length === 0 ? _swappers.setCurrentSwappers : toDispatch[0].length === 2 && typeof toDispatch[0][0] === "boolean" ? _sorted.setCurrentSorted : _mergeSort.setCurrentMergeX;
@@ -31588,15 +31803,28 @@
 	  } else {
 	    dispatch(dispatchFunction(toDispatch.shift()));
 	  }
-	  setTimeout(function () {
-	    handleDispatch(toDispatch, dispatch, array, speed);
-	  }, speed);
+	  scheduleNext(function () {
+	    if (!_runController2.default.isRunActive(runId)) return;
+	    handleDispatch(toDispatch, dispatch, array, speed, runId);
+	  }, speed, runId);
+	}
+	
+	function scheduleNext(cb, delay, runId) {
+	  var tick = function tick() {
+	    if (!_runController2.default.isRunActive(runId)) return;
+	    if (!_pauseController2.default.isPaused()) {
+	      setTimeout(cb, delay);
+	    } else {
+	      setTimeout(tick, 100);
+	    }
+	  };
+	  tick();
 	}
 	
 	exports.default = mergeSort;
 
 /***/ },
-/* 391 */
+/* 394 */
 /*!************************************************!*\
   !*** ./client/app/reducers/mergeSort/index.js ***!
   \************************************************/
@@ -31625,7 +31853,7 @@
 	}, initialState);
 
 /***/ },
-/* 392 */
+/* 395 */
 /*!**********************************************************!*\
   !*** ./client/app/components/Main/Body/BodyContainer.js ***!
   \**********************************************************/
@@ -31639,7 +31867,7 @@
 	
 	var _reactRedux = __webpack_require__(/*! react-redux */ 178);
 	
-	var _Body = __webpack_require__(/*! ./Body.jsx */ 393);
+	var _Body = __webpack_require__(/*! ./Body.jsx */ 396);
 	
 	var _Body2 = _interopRequireDefault(_Body);
 	
@@ -31675,7 +31903,7 @@
 	exports.default = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(_Body2.default);
 
 /***/ },
-/* 393 */
+/* 396 */
 /*!**************************************************!*\
   !*** ./client/app/components/Main/Body/Body.jsx ***!
   \**************************************************/
@@ -31693,7 +31921,7 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
-	__webpack_require__(/*! ./Body.css */ 394);
+	__webpack_require__(/*! ./Body.css */ 397);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -31758,7 +31986,7 @@
 	exports.default = Body;
 
 /***/ },
-/* 394 */
+/* 397 */
 /*!**************************************************!*\
   !*** ./client/app/components/Main/Body/Body.css ***!
   \**************************************************/
@@ -31767,7 +31995,7 @@
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(/*! !./../../../../../~/css-loader!./Body.css */ 395);
+	var content = __webpack_require__(/*! !./../../../../../~/css-loader!./Body.css */ 398);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(/*! ./../../../../../~/style-loader/addStyles.js */ 223)(content, {});
@@ -31787,7 +32015,7 @@
 	}
 
 /***/ },
-/* 395 */
+/* 398 */
 /*!*****************************************************************!*\
   !*** ./~/css-loader!./client/app/components/Main/Body/Body.css ***!
   \*****************************************************************/
@@ -31798,13 +32026,13 @@
 	
 	
 	// module
-	exports.push([module.id, "#bodyContainer {\n  width: 100%;\n  height: 100%;\n  background-color: rgb(230, 230, 230);\n  text-align: center;\n}\n\n.arrayElement {\n  padding-top: 7px;\n  font-family: sans-serif;\n  font-weight: 700;\n  display: inline-block;\n}\n", ""]);
+	exports.push([module.id, "#bodyContainer {\r\n  width: 100%;\r\n  height: 100%;\r\n  background-color: rgb(230, 230, 230);\r\n  text-align: center;\r\n}\r\n\r\n.arrayElement {\r\n  padding-top: 7px;\r\n  font-family: sans-serif;\r\n  font-weight: 700;\r\n  display: inline-block;\r\n}\r\n", ""]);
 	
 	// exports
 
 
 /***/ },
-/* 396 */
+/* 399 */
 /*!*********************************************!*\
   !*** ./client/app/components/Main/Main.css ***!
   \*********************************************/
@@ -31813,7 +32041,7 @@
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(/*! !./../../../../~/css-loader!./Main.css */ 397);
+	var content = __webpack_require__(/*! !./../../../../~/css-loader!./Main.css */ 400);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(/*! ./../../../../~/style-loader/addStyles.js */ 223)(content, {});
@@ -31833,7 +32061,7 @@
 	}
 
 /***/ },
-/* 397 */
+/* 400 */
 /*!************************************************************!*\
   !*** ./~/css-loader!./client/app/components/Main/Main.css ***!
   \************************************************************/
@@ -31844,13 +32072,13 @@
 	
 	
 	// module
-	exports.push([module.id, "body {\n  margin: 0;\n  -webkit-touch-callout: none;\n  -webkit-user-select: none;\n  -khtml-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none;\n}\n", ""]);
+	exports.push([module.id, "body {\r\n  margin: 0;\r\n  -webkit-touch-callout: none;\r\n  -webkit-user-select: none;\r\n  -khtml-user-select: none;\r\n  -moz-user-select: none;\r\n  -ms-user-select: none;\r\n  user-select: none;\r\n}\r\n", ""]);
 	
 	// exports
 
 
 /***/ },
-/* 398 */
+/* 401 */
 /*!*****************************!*\
   !*** ./client/app/store.js ***!
   \*****************************/
@@ -31864,7 +32092,7 @@
 	
 	var _redux = __webpack_require__(/*! redux */ 189);
 	
-	var _reducers = __webpack_require__(/*! ./reducers */ 399);
+	var _reducers = __webpack_require__(/*! ./reducers */ 402);
 	
 	var _reducers2 = _interopRequireDefault(_reducers);
 	
@@ -31873,7 +32101,7 @@
 	exports.default = (0, _redux.createStore)(_reducers2.default);
 
 /***/ },
-/* 399 */
+/* 402 */
 /*!**************************************!*\
   !*** ./client/app/reducers/index.js ***!
   \**************************************/
@@ -31891,19 +32119,21 @@
 	
 	var _algorithm = __webpack_require__(/*! ./algorithm */ 380);
 	
-	var _bubbleSort = __webpack_require__(/*! ./bubbleSort */ 384);
+	var _bubbleSort = __webpack_require__(/*! ./bubbleSort */ 387);
 	
-	var _quickSort = __webpack_require__(/*! ./quickSort */ 387);
+	var _quickSort = __webpack_require__(/*! ./quickSort */ 390);
 	
-	var _swappers = __webpack_require__(/*! ./swappers */ 385);
+	var _swappers = __webpack_require__(/*! ./swappers */ 388);
 	
-	var _heapSort = __webpack_require__(/*! ./heapSort */ 389);
+	var _heapSort = __webpack_require__(/*! ./heapSort */ 392);
 	
 	var _sorted = __webpack_require__(/*! ./sorted */ 381);
 	
-	var _mergeSort = __webpack_require__(/*! ./mergeSort */ 391);
+	var _mergeSort = __webpack_require__(/*! ./mergeSort */ 394);
 	
 	var _running = __webpack_require__(/*! ./running */ 382);
+	
+	var _paused = __webpack_require__(/*! ./paused */ 383);
 	
 	exports.default = (0, _redux.combineReducers)({
 	  array: _array.array,
@@ -31915,7 +32145,8 @@
 	  currentHeapThree: _heapSort.currentHeapThree,
 	  currentSorted: _sorted.currentSorted,
 	  currentMergeX: _mergeSort.currentMergeX,
-	  isRunning: _running.isRunning
+	  isRunning: _running.isRunning,
+	  isPaused: _paused.isPaused
 	});
 
 /***/ }

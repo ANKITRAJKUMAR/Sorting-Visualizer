@@ -3,12 +3,15 @@ import { setCurrentMergeX } from "../reducers/mergeSort";
 import { setCurrentSwappers } from "../reducers/swappers";
 import { setCurrentSorted } from "../reducers/sorted";
 import { setRunning } from "../reducers/running";
+import pauseController from "../pauseController";
+import runController from "../runController";
 
 function mergeSort(stateArray, dispatch, speed) {
   let array = stateArray.slice(0),
       toDispatch = [];
+  const runId = runController.getCurrentRunId();
   let finalArray = mergeSortHelper(array.map((num, idx) => [num, idx]), toDispatch, 0, array.length - 1, {array: array.slice(0)});
-  handleDispatch(toDispatch, dispatch, finalArray, speed);
+  handleDispatch(toDispatch, dispatch, finalArray, speed, runId);
 }
 
 function mergeSortHelper(array, toDispatch, start, end, obj) {
@@ -52,14 +55,15 @@ function actualSort(first, second, toDispatch, obj, start, end, isFinalMerge) {
   return sortedArray.concat(first).concat(second);
 }
 
-function handleDispatch(toDispatch, dispatch, array, speed) {
+function handleDispatch(toDispatch, dispatch, array, speed, runId) {
   if (!toDispatch.length) {
     dispatch(setCurrentMergeX(array.map((num, index) => index)));
-    setTimeout(() => {
+    scheduleNext(() => {
+      if (!runController.isRunActive(runId)) return;
       dispatch(setCurrentMergeX([]));
       dispatch(setCurrentSorted(array.map((num, index) => index)));
       dispatch(setRunning(false));
-    }, 900);
+    }, 900, runId);
     return;
   }
   let dispatchFunction = toDispatch[0].length > 3 ?
@@ -76,9 +80,22 @@ function handleDispatch(toDispatch, dispatch, array, speed) {
   } else {
     dispatch(dispatchFunction(toDispatch.shift()));
   }
-  setTimeout(() => {
-    handleDispatch(toDispatch, dispatch, array, speed);
-  }, speed);
+  scheduleNext(() => {
+    if (!runController.isRunActive(runId)) return;
+    handleDispatch(toDispatch, dispatch, array, speed, runId);
+  }, speed, runId);
+}
+
+function scheduleNext(cb, delay, runId) {
+  const tick = () => {
+    if (!runController.isRunActive(runId)) return;
+    if (!pauseController.isPaused()) {
+      setTimeout(cb, delay);
+    } else {
+      setTimeout(tick, 100);
+    }
+  };
+  tick();
 }
 
 export default mergeSort;

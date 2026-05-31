@@ -70,15 +70,39 @@
   cursor: pointer;
 }
 
-#sort {
+#sort,
+#pause,
+.toolbarButton {
   font-size: 16px;
   font-family: monospace;
   display: inline-block;
   margin-left: 15px;
+  margin-right: 15px;
+  color: white;
+  background: transparent;
+  border: 1px solid white;
+  padding: 6px 12px;
+  cursor: pointer;
 }
 
-#sort:hover {
+#sort:hover,
+#pause:hover,
+.toolbarButton:hover {
   color: rgb(212, 212, 212);
+}
+
+#sort[disabled],
+#pause[disabled],
+.toolbarButton[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbarStatus {
+  display: inline-block;
+  color: white;
+  font-family: monospace;
+  margin-left: 15px;
 }
 
 input[type=range] {
@@ -130,6 +154,17 @@ input[type=range]::-moz-range-thumb {
 input[type=range]:-moz-focusring{
     outline: 1px solid white;
     outline-offset: -1px;
+}
+
+#pause {
+  font-size: 16px;
+  font-family: monospace;
+  display: inline-block;
+  margin-left: 15px;
+}
+
+#pause:hover {
+  color: rgb(212, 212, 212);
 }
 
 input[type=range]::-ms-track {

@@ -3,10 +3,13 @@ import { setCurrentHeapThree } from "../reducers/heapSort";
 import { setCurrentSwappers } from "../reducers/swappers";
 import { setCurrentSorted } from "../reducers/sorted";
 import { setRunning } from "../reducers/running";
+import pauseController from "../pauseController";
+import runController from "../runController";
 
 function heapSort(stateArray, dispatch, speed) {
   let array = stateArray.slice(0),
       toDispatch = [];
+  const runId = runController.getCurrentRunId();
   buildMaxHeap(array, toDispatch);
   let end = array.length - 1;
   while (end > 0) {
@@ -22,7 +25,7 @@ function heapSort(stateArray, dispatch, speed) {
     end--;
   }
   toDispatch.push([true, end]);
-  handleDispatch(toDispatch, dispatch, array, speed);
+  handleDispatch(toDispatch, dispatch, array, speed, runId);
   return array;
 }
 
@@ -59,13 +62,14 @@ function siftDown(array, start, end, toDispatch) {
   }
 }
 
-function handleDispatch(toDispatch, dispatch, array, speed) {
+function handleDispatch(toDispatch, dispatch, array, speed, runId) {
   if (!toDispatch.length) {
     dispatch(setCurrentHeapThree(array.map((num, index) => index)));
-    setTimeout(() => {
+    scheduleNext(() => {
+      if (!runController.isRunActive(runId)) return;
       dispatch(setCurrentHeapThree([]));
       dispatch(setRunning(false));
-    }, 900);
+    }, 900, runId);
     return;
   }
   let dispatchFunction = toDispatch[0].length > 3 ?
@@ -73,9 +77,22 @@ function handleDispatch(toDispatch, dispatch, array, speed) {
         setCurrentSwappers : toDispatch[0].length === 2 && typeof toDispatch[0][0] === "boolean" ?
           setCurrentSorted : setCurrentHeapThree;
   dispatch(dispatchFunction(toDispatch.shift()));
-  setTimeout(() => {
-    handleDispatch(toDispatch, dispatch, array, speed);
-  }, speed);
+  scheduleNext(() => {
+    if (!runController.isRunActive(runId)) return;
+    handleDispatch(toDispatch, dispatch, array, speed, runId);
+  }, speed, runId);
+}
+
+function scheduleNext(cb, delay, runId) {
+  const tick = () => {
+    if (!runController.isRunActive(runId)) return;
+    if (!pauseController.isPaused()) {
+      setTimeout(cb, delay);
+    } else {
+      setTimeout(tick, 100);
+    }
+  };
+  tick();
 }
 
 export default heapSort;

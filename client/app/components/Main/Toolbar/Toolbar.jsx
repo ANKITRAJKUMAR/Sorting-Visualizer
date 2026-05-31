@@ -34,6 +34,8 @@ class Toolbar extends Component {
       generateArray,
       sort,
       isRunning,
+      isPaused,
+      togglePause,
     } = this.props;
 
     const speed = 570 - Math.pow(array.length, 2) > 0 ?
@@ -88,13 +90,25 @@ class Toolbar extends Component {
           Bubble Sort
         </div>
         <div className="separator"></div>
-        { algorithm ? <div
+        { algorithm ? <button
             id="sort"
-            style={{color: color, cursor: cursor}}
-            onClick={!isRunning ? () => sort(algorithm, array, speed) : null}>
+            className="toolbarButton"
+            disabled={isRunning && !isPaused}
+            onClick={!isRunning || isPaused ? () => sort(algorithm, array, speed) : null}>
             Sort!
-          </div> : null
+          </button> : null
         }
+        <div className="separator"></div>
+        <button
+          id="pause"
+          className="toolbarButton"
+          disabled={!isRunning}
+          onClick={isRunning ? () => togglePause() : null}>
+          {isPaused ? "Resume" : "Pause"}
+        </button>
+        <div className="toolbarStatus">
+          { isRunning ? (isPaused ? "Paused" : "Running") : "Idle" }
+        </div>
       </div>
     )
   }
